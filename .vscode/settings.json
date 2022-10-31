@@ -3,6 +3,9 @@
   "diffEditor.codeLens": true,
   "cSpell.words": [
     "cssnano",
-    "theimage"
+    "instanceof",
+    "supabase",
+    "theimage",
+    "upsert"
   ]
 }

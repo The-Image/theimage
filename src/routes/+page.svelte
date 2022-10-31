@@ -1,2 +1,11 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<script>
+  import { page } from '$app/stores'
+  import Account from '$components/Account.svelte'
+  import Auth from '$components/Auth.svelte'
+</script>
+
+{#if !$page.data.session}
+  <Auth />
+{:else}
+  <Account session={$page.data.session} />
+{/if}
