@@ -1,11 +1,9 @@
 <script>
-  import { page } from '$app/stores'
-  import Account from '$components/Account.svelte'
-  import Auth from '$components/Auth.svelte'
+  import Nav from '$components/Nav.svelte'
+  import Hero from '$components/Hero.svelte'
 </script>
 
-{#if !$page.data.session}
-  <Auth />
-{:else}
-  <Account session={$page.data.session} />
-{/if}
+<template lang="pug">
+  Nav
+  Hero
+</template>

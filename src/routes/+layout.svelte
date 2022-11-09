@@ -18,8 +18,7 @@
 
 <template lang="pug">
 
-	//- .min-h-screen.flex.flex-col
-	.container(style='padding: 50px 0 100px 0')
+	.min-h-screen
 		slot
 
 </template>

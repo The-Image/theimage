@@ -2,8 +2,12 @@
   "editor.tabCompletion": "on",
   "diffEditor.codeLens": true,
   "cSpell.words": [
+    "activedescendant",
     "cssnano",
+    "haspopup",
+    "hgroup",
     "instanceof",
+    "listbox",
     "supabase",
     "theimage",
     "upsert"
