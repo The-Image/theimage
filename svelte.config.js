@@ -11,6 +11,7 @@ const config = {
 	kit: {
 		adapter: adapter(),
 		alias: {
+			$actions: path.resolve('./src/lib/actions'),
 			$components: path.resolve('./src/lib/components'),
 			$testData: path.resolve('./src/test-data'),
 		}

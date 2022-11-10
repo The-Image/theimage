@@ -12,8 +12,16 @@
   @apply bg-action text-black text-lg font-semibold leading-none inline-flex items-center justify-center h-14 px-8 cursor-pointer
 }
 
+.button.reverse {
+  @apply bg-black text-white
+}
+
 .button:hover {
   @apply bg-action-hover transition-colors duration-300
+}
+
+.button.reverse:hover {
+  @apply bg-white text-black transition-colors duration-300
 }
 
 .button:focus {
@@ -26,4 +34,8 @@
 
 .button:disabled:focus {
   @apply outline-none
+}
+
+strong {
+  @apply font-semibold
 }
