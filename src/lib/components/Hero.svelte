@@ -9,13 +9,13 @@
 </script>
 
 <template lang="pug">
-  section.bg-black.text-white.pt-20
+  section.bg-black.text-white.pt-20.relative
 
     //- Lead
     .content-container.text-center.pb-14
       hgroup
         h1.font-semibold.tracking-tight.text-4xl.sm_text-5xl.mb-8 Create professional photography &amp; illustrations #[span.lg_whitespace-nowrap that are 100%] on brand  #[span.whitespace-nowrap —  in seconds].
-        h2.mx-auto.max-w-xl.text-xl.text-gray-300.mb-12 Easily utilize the latest AI to create professional, original images from your {cmsName === 'Hubspot' ? 'Hubspot content' : 'existing CMS content'}.
+        h2.mx-auto.max-w-xl.text-xl.text-gray-300.mb-12 Easily utilize the latest AI to create professional, original&nbsp;images from your {cmsName === 'Hubspot' ? 'Hubspot content' : "brand’s content"}.
         p.button(on:click!="{() => dispatch('showOverlay')}" on:keydown!="{() => dispatch('showOverlay')}") Get Early Access
 
     //- Video
@@ -35,6 +35,8 @@
             h2 {option.heading}
             p.pr-8 {option.note}
 
+    .accent
+
 </template>
 
 <style>
@@ -50,5 +52,12 @@
   .ability .icon-link {
     background-image: url('icon-question.svg');
     @apply block absolute top-0 right-0 bg-action hover_bg-action-hover p-4 cursor-pointer bg-center bg-no-repeat;
+  }
+  .accent {
+    @apply absolute z-10 right-0 h-0 w-0 border-solid border-y-transparent border-l-transparent border-r-gray-500;
+    @apply border-t-[8vh] border-r-[55vw] border-b-[4vh] border-l-0 -bottom-16;
+    @apply md_border-t-[8vh] md_border-r-[40vw] md_border-b-[6vh] md_-bottom-20;
+    @apply lg_border-t-[18vh] lg_border-r-[40vw] lg_border-b-[7vh] lg_-bottom-24;
+    @apply 2xl_border-r-[30vw];
   }
 </style>

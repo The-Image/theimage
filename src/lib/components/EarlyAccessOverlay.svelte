@@ -130,7 +130,7 @@
                 p.inline.xl_block If you&rsquo;re able to share some your time and perspective, we&rsquo;ll move your reservation ahead in&nbsp;the&nbsp;line.
               .flex.items-center.justify-between.md_justify-start.space-x-4.pr-8.mb_pr-0.max-w-sm
                 p.font-medium.md_font-semibold Available for a chat?
-                Toggle(name='chat' active='{chat}' darkBg=true on:click!='{() => { chat = !chat}}')
+                Toggle(name='chat' active='{chat}' darkBg=true on:click!='{() => { chat = !chat}}' on:keydown!='{(event) => { if(event.key === "Enter") { chat = !chat}}}')
 
         button(type='submit' disabled="{!formValid}").block.w-full.text-lg.font-semibold.text-black.py-6.px-4.bg-action.hover_bg-action-hover.transition-colors.duration-200.disabled_bg-gray-400.disabled_cursor-not-allowed
           .content-container Reserve My Spot

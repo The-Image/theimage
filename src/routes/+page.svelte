@@ -107,19 +107,39 @@
 
 <template lang="pug">
   Nav('{inview}')
-  #home(use:intersectionAPI on:inview!='{(e) => inview = "home"}')
-    Hero('{pricingOptions}' on:showOverlay='{showOverlayHandler}' '{cmsName}')
-  #every(use:intersectionAPI on:inview!='{(e) => reportView(e.detail)}')
-    EveryImage
-  #yours(use:intersectionAPI  on:inview!='{(e) => reportView(e.detail)}')
-    YourBrand
-  #effortless(use:intersectionAPI  on:inview!='{(e) => reportView(e.detail)}')
-    Effortless
+
+  .relative
+    #home.absolute(style='top: -80px')
+    div(use:intersectionAPI  on:inview!="{() => inview = 'home'}")
+      Hero('{pricingOptions}' on:showOverlay='{showOverlayHandler}' '{cmsName}')
+
+  .relative
+    #every.absolute(style='top: -80px')
+    div(use:intersectionAPI  on:inview!="{() => inview = 'every'}")
+      EveryImage(on:showOverlay='{showOverlayHandler}')
+
+  .relative
+    #yours.absolute(style='top: -80px')
+    div(use:intersectionAPI  on:inview!="{() => inview = 'yours'}")
+      YourBrand(on:showOverlay='{showOverlayHandler}')
+
+  .relative
+    #effortless.absolute(style='top: -80px')
+    div(use:intersectionAPI  on:inview!="{() => inview = 'effortless'}")
+      Effortless(on:showOverlay='{showOverlayHandler}' '{cmsName}')
+
   Message
-  #pricing(use:intersectionAPI  on:inview!='{(e) => reportView(e.detail)}')
-    Pricing('{pricingOptions}' '{selectedOptionsPrice}')
+
+  .relative
+    #pricing.absolute(style='top: -80px')
+    div(use:intersectionAPI  on:inview!="{() => inview = 'pricing'}")
+      Pricing('{pricingOptions}' '{selectedOptionsPrice}')
+
   CTA(on:showOverlay='{showOverlayHandler}')
+
   Footer
+
   +if('showOverlay')
     EarlyAccessOverlay('{pricingOptions}' '{selectedOptionsPrice}' on:closeOverlay!='{(e) => showOverlay = false}')
+
 </template>

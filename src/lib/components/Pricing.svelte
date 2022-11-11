@@ -16,13 +16,13 @@
 
 <template lang="pug">
   section.bg-white.text-black.pt-16.pb-20
-    .content-container.space-y-10
+    .content-container.space-y-12
       header.space-y-4
-        h1.text-3xl.font-medium Pricing
-        p.text-lg.font-medium Everyone&rsquo;s needs are different. Pay only for the abilities that are useful to your&nbsp;business&nbsp;&ndash;
-      .grid.grid-cols-2.gap-x-20.gap-y-10
+        h1.text-4xl.font-medium Pricing
+        p.text-lg Everyone&rsquo;s needs are different. Pay only for the abilities that are useful to your&nbsp;business&nbsp;&ndash;
+      .grid.grid-cols-2.gap-x-20.gap-y-12
         .flex.w-half.items-baseline.justify-between
-          p.text-xl.font-medium.whitespace-nowrap Selected Options
+          p.text-lg.font-semibold.whitespace-nowrap Selected Options
           p(class='py-0.5').rounded-full.bg-black.text-white.px-6.whitespace-nowrap
             span.text-3xl.font-medium #[sup.text-lg $] {selectedOptionsPrice}
             span.text-sm.opacity-80.font-semibold / mo

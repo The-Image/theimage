@@ -18,7 +18,7 @@
 </script>
 
 <template lang="pug">
-  nav.bg-black.text-white.sticky.top-0.z-10
+  nav.bg-black.text-white.sticky.top-0.z-50
     .content-container.h-20.flex.items-center.relative
       a(href='#home').h-full.inline-flex.flex-none.items-center.border-b-4.border-white.absolute.top-0.left-10.sm_left-12.lg_left-20.bottom-0
         h1.whitespace-nowrap.hidden The Image

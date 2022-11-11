@@ -2,6 +2,9 @@ const defaultTheme = require('tailwindcss/defaultTheme')
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
   separator: '_',
   content: ['./src/**/*.{html,js,svelte,ts}'],
   theme: {
