@@ -33,9 +33,9 @@
                 .flex.space-x-2.items-center
                   h2.text-lg.font-semibold {option.heading}
                 +if('option.selectable === true')
-                  Toggle(name='{option.name}' active='{option.selected}' on:click!='{() => { option.selected = !option.selected; updatePrice() }}')
+                  Toggle(name='{option.name}' active='{option.selected}' on:click!='{() => { option.selected = !option.selected; updatePrice() }}' on:keydown!='{(event) => { if(event.key === "Enter") { option.selected = !option.selected; updatePrice() } }}')
                   +else
-                    span.text-lg.font-semibold.rounded-full.py-2.px-6.bg-action.text-black {option.valueText}
+                    span.text-lg.font-semibold.rounded-full.py-2.px-6.bg-black.text-white {option.valueText}
               p.text-sm.italic.pr-12.xl_pr-32 {option.note}
   
 </template>

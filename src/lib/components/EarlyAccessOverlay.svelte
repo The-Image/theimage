@@ -10,7 +10,6 @@
   // customize pricing options content for this view
   pricingOptions.filter((option) => option.name === 'animation')[0].heading = 'Animations'
   pricingOptions.filter((option) => option.name === 'cdn')[0].heading = 'Image Hosting'
-
   // originally tried to add use this to add note, but SK kept firing events when overlay is loaded
   // const createEditOption: PricingOption = {
   //   name: 'createEdit',
@@ -38,7 +37,17 @@
     }
   }
 
+  let email: string
+  const validateEmail = (email: string) => {
+    const re = /\S+@\S+\.\S+/
+    return re.test(email)
+  }
+  $: formValid = validateEmail(email)
+
   const dispatch = createEventDispatcher()
+  const handleKeydown = (event: { key: any; }) => {
+    if(event.key === 'Escape') dispatch('closeOverlay')
+	}
   const updatePrice = () => {
     let newPrice = 0
     pricingOptions.forEach((option) => {
@@ -46,8 +55,15 @@
     })
     selectedOptionsPrice = newPrice
   }
+  const handleSubmit = () => {
+    dispatch('closeOverlay')
+    // TODO: submit form
+  }
 </script>
 
+<svelte:window on:keydown={handleKeydown}/>
+
+<!-- svelte-ignore a11y-autofocus -->
 <template lang="pug">
   aside(on:click|self!="{() => dispatch('closeOverlay')}" on:keydown|self!="{() => dispatch('closeOverlay')}").bg-black.bg-opacity-50.fixed.inset-0.z-50.md_p-8.overflow-y-scroll
     
@@ -61,10 +77,10 @@
             p.inline.md_block Reserve your spot now &ndash; #[strong with no commitment] &ndash; to try us out&nbsp;yourself.
         p(on:click!="{() => dispatch('closeOverlay')}" on:keydown!="{() => dispatch('closeOverlay')}").cursor-pointer.icon-close.flex.items-center.justify-center.font-thin.text-2xl.leading-none.w-12.h-12.absolute.right-4.top-4.text-gray-500 &times;
 
-      form
+      form(on:submit|preventDefault="{handleSubmit}")
 
         .px-8.sm_px-12.lg_px-20.pt-6.lg_pt-8.pb-8.lg_pb-10
-          input(type='text' placeholder='Email Address' name='email').w-full.h-12.border-gray-400.focus_border-action.focus_ring-action
+          input(type='email' placeholder='Email Address' name='email' autofocus bind:value='{email}').w-full.h-12.border-gray-400.focus_border-action.focus_ring-action
 
         .bg-gray-200.space-y-10.xl_space-y-0.xl_grid.xl_grid-cols-3.gap-x-20.px-8.sm_px-12.lg_px-20.py-8.lg_py-10.relative
           .xl_col-span-2.space-y-4.md_space-y-0.md_grid.md_grid-cols-2.md_gap-x-14.md_gap-y-4.max-w-3xl
@@ -95,7 +111,7 @@
                       +if('option.note')
                         span(on:click="{showNote(option)}" on:keydown="{showNote(option)}").icon-link.absolute.md_static.right-0: span.hidden Learn More
                     +if('option.selectable === true')
-                      Toggle(name='{option.name}' active='{option.selected}' darkBg=true on:click!='{() => { option.selected = !option.selected; updatePrice() }}')
+                      Toggle(name='{option.name}' active='{option.selected}' darkBg=true on:click!='{() => { option.selected = !option.selected; updatePrice() }}' on:keydown!='{(event) => { if(event.key === "Enter") { option.selected = !option.selected; updatePrice() } }}')
                       +else
                         span.font-medium.rounded-full.py-2.px-6.bg-black.text-white {option.valueText}
   
@@ -116,7 +132,7 @@
                 p.font-medium.md_font-semibold Available for a chat?
                 Toggle(name='chat' active='{chat}' darkBg=true on:click!='{() => { chat = !chat}}')
 
-        button(type='submit').block.w-full.text-lg.font-semibold.text-black.py-6.px-4.bg-action.hover_bg-action-hover.transition-colors.duration-200
+        button(type='submit' disabled="{!formValid}").block.w-full.text-lg.font-semibold.text-black.py-6.px-4.bg-action.hover_bg-action-hover.transition-colors.duration-200.disabled_bg-gray-400.disabled_cursor-not-allowed
           .content-container Reserve My Spot
 
 </template>
