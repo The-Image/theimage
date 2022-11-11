@@ -1,5 +1,6 @@
 export interface PricingOption {
-  option: string,
+  name: string;
+  heading: string,
   note: string,
   link?: string,
   selectable: boolean,

@@ -22,29 +22,20 @@
         p.text-lg.font-medium Everyone&rsquo;s needs are different. Pay only for the abilities that are useful to your&nbsp;business&nbsp;&ndash;
       .grid.grid-cols-2.gap-x-20.gap-y-10
         .flex.w-half.items-baseline.justify-between
-          p.text-xl.font-medium Selected Options
-          p(class='py-0.5').rounded-full.bg-black.text-white.px-6
+          p.text-xl.font-medium.whitespace-nowrap Selected Options
+          p(class='py-0.5').rounded-full.bg-black.text-white.px-6.whitespace-nowrap
             span.text-3xl.font-medium #[sup.text-lg $] {selectedOptionsPrice}
             span.text-sm.opacity-80.font-semibold / mo
-        ul.col-span-2.grid.grid-cols-2.gap-x-20.gap-y-10
+        ul.col-span-2.grid.grid-cols-2.gap-x-20.gap-y-8
           +each('pricingOptions as option')
-            li.space-y-3.items-baseline
+            li.space-y-4.items-baseline
               .flex.items-baseline.justify-between
                 .flex.space-x-2.items-center
-                  h2.text-lg.font-semibold {option.option}
-                  +if('option.link')
-                    a(href='{option.link}').icon-link: span.hidden Learn More
+                  h2.text-lg.font-semibold {option.heading}
                 +if('option.selectable === true')
-                  Toggle(active='{option.selected}' on:click!='{() => { option.selected = !option.selected; updatePrice() }}')
+                  Toggle(name='{option.name}' active='{option.selected}' on:click!='{() => { option.selected = !option.selected; updatePrice() }}')
                   +else
-                    span.text-lg.font-medium.rounded-full.py-2.px-6.bg-action.text-black {option.valueText}
+                    span.text-lg.font-semibold.rounded-full.py-2.px-6.bg-action.text-black {option.valueText}
               p.text-sm.italic.pr-12.xl_pr-32 {option.note}
   
 </template>
-
-<style>
-  .icon-link {
-    background-image: url('icon-question.svg');
-    @apply p-4 cursor-pointer bg-center bg-no-repeat;
-  }
-</style>
