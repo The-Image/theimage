@@ -22,7 +22,7 @@
     .content-container.h-20.flex.items-center.relative
       a(href='#home').h-full.inline-flex.flex-none.items-center.border-b-4.border-white.absolute.top-0.left-10.sm_left-12.lg_left-20.bottom-0
         h1.whitespace-nowrap.hidden The Image
-        img.w-28.rounded-lg(src='logo_white.svg' alt="logo")
+        img.w-28(src='logo_white.svg' alt="logo")
       .hidden.md_flex.md_grow.space-x-5.justify-center
         +each('links as link')
           a(href='{link.href}' class="{'#' + inview === link.href ? 'active' : ''}").link {link.label}

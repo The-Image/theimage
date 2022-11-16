@@ -11,9 +11,12 @@ module.exports = {
     extend: {
       colors: {
         action: {
-          DEFAULT: "#00ffff",
-          hover: "#00ffff",
-          focus: "#00ffff",
+          DEFAULT: "hsl(180, 100%, 50%)",
+          hover: "hsl(180, 100%, 53%)",
+          focus: "hsl(180, 100%, 43%)",
+          light: "hsl(180, 95%, 80%)",
+          lighter: "hsl(180, 95%, 90%)",
+          lightest: "hsl(180, 90%, 97%)",
         },
         hubspot: {
           base: "#ff5c35"
