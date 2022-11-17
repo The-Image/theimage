@@ -1,111 +1,102 @@
 <script lang='ts'>
-  import RangeInput from '$components/RangeInput.svelte'
+  import type { workRequest, apiText2ImgResponse } from '$lib/types'
   import Logo from '$components/Logo.svelte'
+  import RangeInput from '$components/RangeInput.svelte'
+  import * as m from '$lib/helpers/make'
   
-  //- API Constraints
-  const MIN_STEPS = 1
-  const MAX_STEPS = 50
-  const MIN_SCALE = 1
-  const MAX_SCALE = 20
+  let processing = false
+  let processingError = false
 
   //- Prompts
-  const promptIdeas = [
-    'a young girl playing basketball',
-    'a happy family traveling',
-    'writing a book',
-    'the endless ocean',
-    'the power of love',
-  ]
-  let image: string = promptIdeas[Math.floor(Math.random() * promptIdeas.length)]
-  let not: string
+  let imagePrompt: string = m.promptIdeas[Math.floor(Math.random() * m.promptIdeas.length)]
+  let imagePromptNegative: string = m.imageDefaults.negative_prompt
 
   //- Guidance
-  let creativity: number = (MAX_SCALE + 1) - 7.5 // create a concept that is the inverse of CFG
-  $: creativityPercent = getCreativityPercent(creativity)
-  const getCreativityPercent = (creativityValue: number) => {
-    const percent = Math.round(creativityValue * 100 / MAX_SCALE)
-    if (percent === 5) return 'Min'
-      else if (percent === 100) return 'Max'
-      else return percent + '%'
-  }
-  $: scale = (MAX_SCALE + 1) - creativity // create the corresponding CFG value
+  let creativity: number = (m.API_CONSTRAINTS.MAX_SCALE + 1) - m.imageDefaults.cfg // concept that is the inverse of CFG
+  $: creativityPercent = m.getCreativityPercent(creativity)
+  $: scale = (m.API_CONSTRAINTS.MAX_SCALE + 1) - creativity // determine corresponding CFG value
 
   //- Effort
-  let steps: number = 20
-  $: stepsPercent = getStepsPercent(steps)
-  const getStepsPercent = (stepsValue: number) => {
-    const percent = Math.round(stepsValue * 100 / MAX_STEPS)
-    if (percent === 2) return 'Min'
-      else if (percent === 100) return 'Max'
-      else return percent + '%'
-  }
-
+  let steps: number = m.imageDefaults.steps
+  $: stepsPercent = m.getStepsPercent(steps)
+  
   //- Size
-  let aspect: 'square' | 'landscape' | 'portrait' = 'square'
-  let size: 'sm' | 'md' | 'lg' | 'xl' = 'md'
-  const sizes = {
-      sm: {
-        square: { width: 256, height: 256 },
-        landscape: { width: 256, height: 176 },
-        portrait: { width: 176, height: 256 }
-      },
-      md: {
-        square: { width: 528, height: 528 },
-        landscape: { width: 528, height: 384 },
-        portrait: { width: 384, height: 528 }
-      },
-      lg: {
-        square: { width: 768, height: 768 },
-        landscape: { width: 768, height: 512 },
-        portrait: { width: 512, height: 768 }
-      },
-      xl: {
-        square: { width: 1024, height: 1024 },
-        landscape: { width: 1024, height: 768 },
-        portrait: { width: 768, height: 1024 }
-      }
-    }
-  $: width = sizes[size][aspect].width
-  $: height = sizes[size][aspect].height
+  let aspect: m.AspectOption = m.imageDefaults.aspect
+  let size: m.SizeOption = m.imageDefaults.size
+  $: width = m.imageDimensions[size][aspect].width
+  $: height = m.imageDimensions[size][aspect].height
 
   //- Variations
-  let variations = 1 //- 1, 3, 6, 9
-  type VaryByAmt = 'creativity' | 'effort'
-  type VaryByKeyword = 'type' | 'style' | 'color' | 'shot' | 'seed'
-  const IsVaryByAmt = (word: string): word is VaryByAmt => { return word === 'creativity' || word === 'effort' }
-  const IsVaryByKeyword = (word: string): word is VaryByKeyword => { return word === 'type' || word === 'style' || word === 'color' || word === 'shot' || word === 'seed' }
-  let varyBy: VaryByKeyword | VaryByKeyword = 'type'
-  let varianceRandom = true
-  let varianceDir: 'add' | 'subtract' | 'add-subtract' = 'add'
-  let varianceDirAmt: number = 5
-  let varianceSettings: number[] = []
-  const imageTypes = ['Photo', 'Illustration', 'Vector Art']
-  const imageStyles = ['Realistic', 'Abstract', 'Cartoon']
-  const imageColors = ['Natural', 'Grayscale', 'Vibrant']
-  const imageShots = ['Close Up', 'Medium', 'Wide', 'Extra Wide']
-  const varianceOptions = { type: imageTypes, style: imageStyles, color: imageColors, shot: imageShots }
-
-  //- Placeholder Images
-  const createPlaceholderImages = () => {
-    images = []
-    for (let i = 0; i < variations; i++)
-      images.push(`https://picsum.photos/seed/${Math.floor(Math.random() * 999999).toString(16)}/${width}/${height}`)
-  }
+  let variations: m.VariationOption = m.imageDefaults.variations
+  let varyBy: m.VaryByAmtOption | m.VaryByKeywordOption = m.imageDefaults.varyBy
+  let varyRandomly: boolean = m.imageDefaults.varyRandomly
+  let varianceDir: m.varianceDir = m.imageDefaults.varianceDir
+  let varianceDirAmt: number = m.imageDefaults.varianceDirAmt
+  let varianceSettings: string[] = m.imageDefaults.varianceSettings
+  const varianceOptionGroups = { type: m.imageTypes, style: m.imageStyles, color: m.imageColors, shot: m.imageShots }
+  $: selectedVarianceOptions = varianceOptionGroups[varyBy as keyof typeof varianceOptionGroups]?.map((option) => option.label)
 
   //- Output
-  let images: string[] = []
-  const submitHandler = (e: Event) => {
-    e.preventDefault()
-    createPlaceholderImages()
-    
-    // capture form data
-    const formData = new FormData(e.target as HTMLFormElement)
-    const data = Object.fromEntries(formData.entries())
-    console.log(data)
-    
-    // send to API
-    // update images
+  let testApi = false
+  let imageGridTallerThanViewport = false
+  let imageGrid: HTMLElement
+  let workRequest: workRequest
+  $: workRequest = {
+    imagePrompt,
+    imagePromptNegative,
+    creativity,
+    scale,
+    steps,
+    aspect,
+    size,
+    variations,
+    varyBy,
+    varyRandomly,
+    varianceDir,
+    varianceDirAmt,
+    varianceSettings,
   }
+  let workOutput: apiText2ImgResponse[] = []
+  let imageUrlList: string[] = []
+
+  const submitHandler = (e: Event) => {
+    // reset
+    e.preventDefault()
+    workOutput = []
+    imageUrlList = []
+    processingError = false
+    processing = true
+
+    console.log('⭐️ workRequest:', workRequest)
+
+    // separate work into individual requests if needed
+    const workRequests = m.getWorkRequests(workRequest)
+
+    // make requests & update image grid data
+    workRequests.forEach(async (request) => {
+      const response = testApi ? m.fakeApiCall(workRequest) : await m.apiCall(workRequest)
+      if(response.status === 'success') {
+        workOutput.push(response as apiText2ImgResponse)
+        workOutput.forEach((item) => item.output.forEach((url) => imageUrlList.push(url)))
+        if(imageGrid) m.checkImageGridHeight(imageGrid, workRequest)
+        processing = false
+
+        console.log('⭐️ imageUrlList:', imageUrlList)
+
+      } else {
+        processingError = true
+        processing = false
+      }
+    })
+  }
+
+  //- TODO:
+  //- [ ] fix image not displaying when calling SD API (works with fake API)
+  //- [ ] update `getWorkRequests` to build requests based on `variations` and `varianceSettings`
+  //- [ ] consider if keep/add generated images in view (rather than clearing)
+  //- [ ] if keep earlier images, vertically align images on each row (to vertically center different aspect ratios)
+  //- [ ] when many images present (e.g. if keep adding), images become no longer visible/scrollable at top of grid
+
 </script>
 
 <!-- svelte-ignore a11y-autofocus -->
@@ -114,26 +105,27 @@
   .flex.min-h-screen.text-xs
 
     .space-y-10.shrink-0.grow-0.py-8.px-6.max-h-screen.overflow-y-auto.bg-gray-50.text-gray-900.dark_bg-gray-800.dark_text-gray-300
-      .inline-flex.shrink.dark_text-white
+      div(style='border-bottom-width: 3px' class='dark_border-b-white/50').inline-flex.shrink.dark_text-white.pb-3.border-b-gray-700
         h1.whitespace-nowrap.hidden The Image
         Logo(inlineStyles='width: 6.5rem')
 
-      form(method='post' action='/api/make' on:submit='{submitHandler}' style="width: 400px").space-y-5
+      //- TODO: update to be a progressive form w/o JS
+      form(on:submit='{submitHandler}' style="width: 400px").space-y-5
 
         //- Prompts
         .flex.items-center.space-x-4.h-10
           label(for='prompt' class='w-1/4') Create
-          input(type='text' name='prompt' bind:value='{image}' autofocus on:focus!='{(event) => event.target.select()}').w-full.h-full
+          input(type='text' name='prompt' bind:value='{imagePrompt}' autofocus on:focus!='{(event) => event.target.select()}').w-full.h-full
 
         .flex.items-center.space-x-4.h-10
           label(for='negative_prompt' class='w-1/4') Avoid
-          input(type='text' name='negative_prompt' bind:value='{not}' on:focus!='{(event) => event.target.select()}').w-full.h-full
+          input(type='text' name='negative_prompt' bind:value='{imagePromptNegative}' on:focus!='{(event) => event.target.select()}').w-full.h-full
 
         //- Guidance
         .flex.items-center.space-x-4.h-10
           label(for='creativity' class='w-1/4') Creativity
           .flex.items-center.space-x-4.w-full
-            RangeInput(name='creativity' bind:value='{creativity}' min='{MIN_SCALE}' max='{MAX_SCALE}' step='0.5' classes='w-full h-full')
+            RangeInput(name='creativity' bind:value='{creativity}' min='{m.API_CONSTRAINTS.MIN_SCALE}' max='{m.API_CONSTRAINTS.MAX_SCALE}' step='0.5' classes='w-full h-full')
             input(type='hidden' name='guidance_scale' bind:value='{scale}')
             span.text-gray-400.dark_text-gray-500 {creativityPercent}
 
@@ -141,7 +133,7 @@
         .flex.items-center.space-x-4.h-10
           label(for='num_inference_steps' class='w-1/4') Effort
           .flex.items-center.space-x-4.w-full
-            RangeInput(name='num_inference_steps' bind:value='{steps}' min='{MIN_STEPS}' max='{MAX_STEPS}' step='1' classes='w-full h-full')
+            RangeInput(name='num_inference_steps' bind:value='{steps}' min='{m.API_CONSTRAINTS.MIN_STEPS}' max='{m.API_CONSTRAINTS.MAX_STEPS}' step='1' classes='w-full h-full')
             span.text-gray-400.dark_text-gray-500 {stepsPercent}
 
         //- Size
@@ -230,17 +222,17 @@
                 option(value='seed') World
           
           //- Keyword Variation Options
-          +if('IsVaryByKeyword(varyBy)')
+          +if('m.IsVaryByKeyword(varyBy)')
             .flex.items-center.space-x-4.h-10
-              label(for='varianceRandom' class='w-1/4') Random
+              label(for='varyRandomly' class='w-1/4') Random
               .flex.items-center.space-x-4.w-full
-                input(type='checkbox' name='varianceRandom' bind:checked='{varianceRandom}' class!='{varianceRandom ? "border-none" : "border-gray-300"}')
+                input(type='checkbox' name='varyRandomly' bind:checked='{varyRandomly}' class!='{varyRandomly ? "border-none" : "border-gray-300"}')
                 +if('varyBy !== "seed"')
-                  span.text-gray-400 {varianceRandom ? varianceOptions[varyBy].join(', ') : 'Items left blank will be random'}
+                  span.text-gray-400 {varyRandomly ? selectedVarianceOptions.join(', ') : 'Items left blank will be random'}
                 +if('varyBy === "seed"')
-                  span.text-gray-400 {varianceRandom ? "Across the multiverse" : 'Items left blank will be random'}
+                  span.text-gray-400 {varyRandomly ? "Across the multiverse" : 'Items left blank will be random'}
 
-            +if('!varianceRandom && varyBy !== "seed"')
+            +if('!varyRandomly && varyBy !== "seed"')
               +const('byCapitalizedPlural = varyBy.charAt(0).toUpperCase() + varyBy.slice(1) + "s"')
               .flex.items-top.space-x-4
                 span(class='w-1/4').flex.items-center.h-10 {byCapitalizedPlural}
@@ -248,10 +240,10 @@
                   +each('new Array(variations) as item, i')
                     select(name='varianceSettings- + {i}' bind:value='{varianceSettings[i]}').w-full.h-10.placeholder_text-gray-400
                       option(value='')
-                      +each('varianceOptions[varyBy] as option')
+                      +each('selectedVarianceOptions as option')
                         option(value='{option}') {option}
 
-            +if('!varianceRandom && varyBy === "seed"')
+            +if('!varyRandomly && varyBy === "seed"')
               .flex.items-top.space-x-4
                 span(class='w-1/4').flex.items-center.h-10 Worlds
                 .flex.flex-col.space-y-2.w-full
@@ -259,7 +251,7 @@
                     input(type='text' name='varianceSettings- + {i}' bind:value='{varianceSettings[i]}' placeholder='Seed  {i + 1}').w-full.h-10.placeholder_text-gray-400
 
           //- Amount Variation Options
-          +if('IsVaryByAmt(varyBy)')
+          +if('m.IsVaryByAmt(varyBy)')
             .flex.items-center.space-x-4.h-10
               label(for='varianceDir' class='w-1/4') By
               .flex.flex-col.space-y-2.w-full
@@ -274,12 +266,18 @@
                 span.text-gray-400 {varianceDirAmt}%
 
         .pt-3
-          button(type='submit') Explore
+          button(type='submit' disabled='{processing}') Explore
 
-    div(class!='{images[6] ? "items-top" : "items-center"}').flex.justify-center.grow.bg-zinc-900.max-h-screen.overflow-y-auto
-      div(class!='{images[1] ? "grid grid-cols-3" : ""}')
-        +each('images as image')
-          img(src='{image}').object-contain
+    div(bind:this='{imageGrid}' class!='{imageGridTallerThanViewport ? "items-top" : "items-center"}').flex.justify-center.grow.bg-zinc-900.max-h-screen.overflow-y-auto
+      +if('processing')
+        p.text-gray-400 Creating
+      +if('processingError')
+        h1.text-red-400 Whoops, something went wrong
+      +if('!processing || !processingError')
+        div(class!='{imageUrlList[1] ? "grid grid-cols-3 auto-rows-min" : ""}')
+          +each('imageUrlList as image, i')
+            div
+              img(src='{image}' width='{workOutput?.meta?.W}' height='{workOutput?.meta?.H}').max-w-full.max-h-full
     
 </template>
 
@@ -310,13 +308,15 @@
     @apply cursor-pointer;
   }
   .shape {
-    @apply bg-black dark_bg-opacity-50;
+    @apply bg-black;
   }
   .shapes:hover .shape {
     @apply bg-action;
   }
   button {
-    @apply font-semibold text-sm w-full p-4;
+    @apply font-medium text-sm w-full p-4;
+    @apply disabled_text-gray-400 disabled_bg-gray-200 disabled_border-none disabled_cursor-wait;
+    @apply dark_disabled_text-gray-500 dark_disabled_bg-gray-700 disabled_cursor-wait;
     @apply bg-black dark_border dark_border-action/30 dark_bg-gray-700 text-white dark_text-gray-200 transition-colors duration-100;
     @apply hover_text-black hover_bg-action;
     @apply focus_text-black focus_bg-action focus_outline-none;
