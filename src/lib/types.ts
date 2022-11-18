@@ -46,7 +46,7 @@ export interface apiText2ImgResponse {
   generationTime: number,
   id: number,
   output: string[],
-  meta: {
+  meta?: {
     W: number,
     H: number,
     prompt: string,

@@ -3,6 +3,7 @@
   import Logo from '$components/Logo.svelte'
   import RangeInput from '$components/RangeInput.svelte'
   import * as m from '$lib/helpers/make'
+	import { tick } from 'svelte';
   
   let processing = false
   let processingError = false
@@ -37,7 +38,7 @@
   $: selectedVarianceOptions = varianceOptionGroups[varyBy as keyof typeof varianceOptionGroups]?.map((option) => option.label)
 
   //- Output
-  let testApi = false
+  let testApi = true
   let imageGridTallerThanViewport = false
   let imageGrid: HTMLElement
   let workRequest: workRequest
@@ -67,31 +68,29 @@
     processingError = false
     processing = true
 
-    console.log('⭐️ workRequest:', workRequest)
-
     // separate work into individual requests if needed
     const workRequests = m.getWorkRequests(workRequest)
 
-    // make requests & update image grid data
-    workRequests.forEach(async (request) => {
-      const response = testApi ? m.fakeApiCall(workRequest) : await m.apiCall(workRequest)
-      if(response.status === 'success') {
-        workOutput.push(response as apiText2ImgResponse)
-        workOutput.forEach((item) => item.output.forEach((url) => imageUrlList.push(url)))
-        if(imageGrid) m.checkImageGridHeight(imageGrid, workRequest)
-        processing = false
-
-        console.log('⭐️ imageUrlList:', imageUrlList)
-
-      } else {
-        processingError = true
-        processing = false
-      }
+    // make requests in parallel & update image grid data
+    Promise.all(workRequests.map((request) => testApi ? m.fakeApiCall(request) : m.apiCall(request)))
+    .then((output) => {
+      output.forEach((item) => { if(item.status === 'success') workOutput.push(item as apiText2ImgResponse) })
+      imageUrlList = workOutput.map((item) => item.output[0])
+      if(imageGrid) imageGridTallerThanViewport = m.checkImageGridHeight(imageGrid, workRequest)
+      console.log('⭐️ imageGridTallerThanViewport:', imageGridTallerThanViewport)
+      processing = false
     })
+    .catch((err) => {
+      console.error('Error:', err)
+      processingError = true
+      processing = false
+    })
+
   }
 
   //- TODO:
   //- [ ] fix image not displaying when calling SD API (works with fake API)
+  //- [ ] fix more images being returned than asked for if > 1
   //- [ ] update `getWorkRequests` to build requests based on `variations` and `varianceSettings`
   //- [ ] consider if keep/add generated images in view (rather than clearing)
   //- [ ] if keep earlier images, vertically align images on each row (to vertically center different aspect ratios)

@@ -155,7 +155,7 @@ export const getStepsPercent = (stepsValue: number) => {
     else return percent + '%'
 }
 
-export const checkImageGridHeight = (imageGrid: HTMLElement, workRequest: workRequest): boolean | undefined => {
+export const checkImageGridHeight = (imageGrid: HTMLElement, workRequest: workRequest): boolean => {
   if (imageGrid) {
     // const viewportHeight = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0)
     const viewportHeight = window.innerHeight
@@ -165,12 +165,15 @@ export const checkImageGridHeight = (imageGrid: HTMLElement, workRequest: workRe
     const aspect = workRequest.aspect as keyof typeof imageDimensions[typeof size]
     const { width, height } = imageDimensions[size][aspect]
     const imageAspectRatio = width / height
-    const imageHeight = maxImageWidth / imageAspectRatio
+    const imageHeight = height > maxImageWidth ? maxImageWidth / imageAspectRatio : height
     const imageRows = Math.ceil(workRequest.variations / 3)
     const imageGridHeight = imageHeight * imageRows
-    if (imageGridHeight > viewportHeight) return true
-      else return false
+    console.log('⭐️ imageAspectRatio:', imageAspectRatio)
+    console.log('⭐️ imageGridHeight:', imageGridHeight)
+    console.log('⭐️ viewportHeight:', viewportHeight)
+    return imageGridHeight > viewportHeight
   }
+  return false
 }
 
 export const getWorkRequests = (workRequest: workRequest): workRequest[] => {
@@ -212,7 +215,8 @@ export const getWorkRequests = (workRequest: workRequest): workRequest[] => {
   return workRequests
 }
 
-export const apiCall = async (workRequest: workRequest): Promise<apiText2ImgResponse | { status: string, message: string }> => {
+// export const apiCall = async (workRequest: workRequest): Promise<apiText2ImgResponse | { status: string, message: string }> => {
+export const apiCall = async (workRequest: workRequest): Promise<apiText2ImgResponse> => {
   // call local API
   const apiResponse = await fetch('/api/make', {
     method: 'POST',
@@ -221,9 +225,9 @@ export const apiCall = async (workRequest: workRequest): Promise<apiText2ImgResp
   });
   const apiData: apiText2ImgResponse = await apiResponse.json();
   // handle errors
-  if(!apiResponse.ok || apiData.status !== 'success') {
-    return { status: 'error', message: apiData.message ?? 'Unable to process request.' }
-  }
+  // if(!apiResponse.ok || apiData.status !== 'success') {
+  //   return { status: 'error', message: apiData.message ?? 'Unable to process request.' }
+  // }
   // return data
   return apiData
 }
@@ -239,7 +243,7 @@ export const fakeApiCall = (workRequest: workRequest): apiText2ImgResponse => {
   const testData = {
     status: 'success',
     generationTime: 2,
-    id: 100000,
+    id: Math.floor(Math.random() * 1000000),
     output: testImages,
     meta: {
       W: width ?? imageDefaults.width,
