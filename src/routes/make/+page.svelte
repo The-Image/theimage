@@ -3,7 +3,6 @@
   import Logo from '$components/Logo.svelte'
   import RangeInput from '$components/RangeInput.svelte'
   import * as m from '$lib/helpers/make'
-	import { tick } from 'svelte';
   
   let processing = false
   let processingError = false
@@ -27,9 +26,14 @@
   $: width = m.imageDimensions[size][aspect].width
   $: height = m.imageDimensions[size][aspect].height
 
+  //- Other
+  let imageType: m.ImageTypeOption = m.imageDefaults.imageType
+  let seedRandom: boolean = m.imageDefaults.seedRandom
+  let seedValue: number | undefined = m.imageDefaults.seedValue
+
   //- Variations
   let variations: m.VariationOption = m.imageDefaults.variations
-  let varyBy: m.VaryByAmtOption | m.VaryByKeywordOption = m.imageDefaults.varyBy
+  let varyBy: m.VaryByAmtOption | m.VaryByKeywordOption | undefined = variations > 1 ? m.imageDefaults.varyBy : undefined
   let varyRandomly: boolean = m.imageDefaults.varyRandomly
   let varianceDir: m.varianceDir = m.imageDefaults.varianceDir
   let varianceDirAmt: number = m.imageDefaults.varianceDirAmt
@@ -38,7 +42,7 @@
   $: selectedVarianceOptions = varianceOptionGroups[varyBy as keyof typeof varianceOptionGroups]?.map((option) => option.label)
 
   //- Output
-  let testApi = true
+  let testApi = false
   let imageGridTallerThanViewport = false
   let imageGrid: HTMLElement
   let workRequest: workRequest
@@ -50,6 +54,8 @@
     steps,
     aspect,
     size,
+    imageType,
+    seed: seedRandom ? Math.floor(Math.random() * 10000000000) : seedValue,
     variations,
     varyBy,
     varyRandomly,
@@ -58,26 +64,26 @@
     varianceSettings,
   }
   let workOutput: apiText2ImgResponse[] = []
-  let imageUrlList: string[] = []
+  let images: { url: string }[] = []
 
   const submitHandler = (e: Event) => {
     // reset
     e.preventDefault()
-    workOutput = []
-    imageUrlList = []
+    workOutput = [] // remove this reset to keep scrolling list of images
     processingError = false
     processing = true
 
     // separate work into individual requests if needed
     const workRequests = m.getWorkRequests(workRequest)
 
-    // make requests in parallel & update image grid data
+    // make requests in parallel & update image grid
     Promise.all(workRequests.map((request) => testApi ? m.fakeApiCall(request) : m.apiCall(request)))
     .then((output) => {
+      if(output[0].status === 'error') { processingError = true;  processing = false }
+      if(output[0].status === 'processing') { processingError = true; console.log(`🐌 Processing - ETA: ${output[0].eta}, URL: ${output[0].fetch_result}`) }
       output.forEach((item) => { if(item.status === 'success') workOutput.push(item as apiText2ImgResponse) })
-      imageUrlList = workOutput.map((item) => item.output[0])
+      workOutput = [...workOutput] // update svelte reactive variable
       if(imageGrid) imageGridTallerThanViewport = m.checkImageGridHeight(imageGrid, workRequest)
-      console.log('⭐️ imageGridTallerThanViewport:', imageGridTallerThanViewport)
       processing = false
     })
     .catch((err) => {
@@ -85,16 +91,14 @@
       processingError = true
       processing = false
     })
-
   }
 
   //- TODO:
-  //- [ ] fix image not displaying when calling SD API (works with fake API)
-  //- [ ] fix more images being returned than asked for if > 1
+  //- [ ] connect 'seed' input value to API call
+  //- [ ] connect 'image type' input value to API call
   //- [ ] update `getWorkRequests` to build requests based on `variations` and `varianceSettings`
-  //- [ ] consider if keep/add generated images in view (rather than clearing)
-  //- [ ] if keep earlier images, vertically align images on each row (to vertically center different aspect ratios)
-  //- [ ] when many images present (e.g. if keep adding), images become no longer visible/scrollable at top of grid
+  //- [ ] add method to follow up on `processing` responses
+  //- [ ] add a 'save' button to save the image to computer
 
 </script>
 
@@ -118,7 +122,7 @@
 
         .flex.items-center.space-x-4.h-10
           label(for='negative_prompt' class='w-1/4') Avoid
-          input(type='text' name='negative_prompt' bind:value='{imagePromptNegative}' on:focus!='{(event) => event.target.select()}').w-full.h-full
+          input(type='text' name='negative_prompt' bind:value='{imagePromptNegative}').w-full.h-full
 
         //- Guidance
         .flex.items-center.space-x-4.h-10
@@ -134,6 +138,28 @@
           .flex.items-center.space-x-4.w-full
             RangeInput(name='num_inference_steps' bind:value='{steps}' min='{m.API_CONSTRAINTS.MIN_STEPS}' max='{m.API_CONSTRAINTS.MAX_STEPS}' step='1' classes='w-full h-full')
             span.text-gray-400.dark_text-gray-500 {stepsPercent}
+
+        //- Image Type
+        +if('varyBy !== "type"')
+          .flex.items-center.space-x-4.h-10
+            label(for='imageType' class='w-1/4') Type
+            .flex.flex-col.space-y-2.w-full
+              select(name='imageType' bind:value='{imageType}')
+                option(value='any') 
+                option(value='photo') Photograph
+                option(value='artwork') Artwork
+                option(value='vector') Vector Artwork
+
+        //- Seed
+        +if('varyBy !== "seed"')
+          .flex.items-top.space-x-4
+            label(for='seedValue' class='w-1/4').h-10.flex.items-center World
+            .flex.flex-col.space-y-2.w-full
+              .h-10.flex.items-center.space-x-4
+                input(type='checkbox' name='seedRandom' bind:checked='{seedRandom}' class!='{seedRandom ? "border-none" : "border-gray-300"}')
+                span.text-gray-400.dark_text-gray-500 {seedRandom ? 'Random' : 'Will be random if left blank'}
+              +if('seedRandom === false')
+                input(type='text' name='seedValue' placeholder='Seed' bind:value='{seedValue}').w-full.h-10
 
         //- Size
         .flex.items-center.space-x-4.h-10
@@ -247,7 +273,7 @@
                 span(class='w-1/4').flex.items-center.h-10 Worlds
                 .flex.flex-col.space-y-2.w-full
                   +each('new Array(variations) as item, i')
-                    input(type='text' name='varianceSettings- + {i}' bind:value='{varianceSettings[i]}' placeholder='Seed  {i + 1}').w-full.h-10.placeholder_text-gray-400
+                    input(type='text' name='varianceSettings- + {i}' bind:value='{varianceSettings[i]}' placeholder='Seed  {i + 1}').w-full.h-10
 
           //- Amount Variation Options
           +if('m.IsVaryByAmt(varyBy)')
@@ -269,24 +295,27 @@
 
     div(bind:this='{imageGrid}' class!='{imageGridTallerThanViewport ? "items-top" : "items-center"}').flex.justify-center.grow.bg-zinc-900.max-h-screen.overflow-y-auto
       +if('processing')
-        p.text-gray-400 Creating
+        p.text-gray-400 Creating...
       +if('processingError')
-        h1.text-red-400 Whoops, something went wrong
+        h1.text-red-400 Whoops, something went wrong.
       +if('!processing || !processingError')
-        div(class!='{imageUrlList[1] ? "grid grid-cols-3 auto-rows-min" : ""}')
-          +each('imageUrlList as image, i')
-            div
-              img(src='{image}' width='{workOutput?.meta?.W}' height='{workOutput?.meta?.H}').max-w-full.max-h-full
+        div(class!='{workOutput[1] ? "grid grid-cols-3 auto-rows-min" : ""}')
+          +each('workOutput as item')
+            div.relative
+              .absolute.left-4.bottom-4.px-2.py-1.text-white.bg-gray-900.bg-opacity-50.rounded-sm.text-xs
+                span {item.meta.seed}
+              img(src='{item.image}' class='w-full')
+              img(src='{item.output}' width='{item.meta.W}' height='{item.meta.H}').max-w-full.max-h-full
     
 </template>
 
 <style>
   input[type='text'], select {
-    @apply text-xs text-gray-900 dark_text-white dark_focus_text-gray-900 border-gray-200 dark_border-gray-400 bg-white dark_bg-gray-600;
-    @apply focus_ring-action-focus focus_border-action-focus dark_focus_bg-white;
+    @apply text-xs text-gray-900 dark_text-white dark_focus_text-gray-900 border-2 hover_border-gray-200 border-transparent dark_border-transparent dark_hover_border-gray-400 bg-white dark_bg-gray-600;
+    @apply placeholder_text-gray-400 focus_ring-action-focus focus_border-action-focus dark_focus_bg-white;
   }
   input[type='checkbox'] {
-    @apply h-5 w-5 text-action-focus focus_ring-action-focus focus_outline-action-focus dark_focus_ring-0 dark_focus_outline-transparent;
+    @apply h-5 w-5 dark_bg-gray-600 text-action-focus focus_ring-action-focus focus_outline-action-focus dark_focus_ring-0 dark_focus_outline-transparent dark_border-2 dark_border-transparent dark_hover_border-gray-400;
   }
   input[type='radio'] {
     @apply h-0 w-0 overflow-hidden bg-transparent text-transparent border-none;
@@ -314,10 +343,10 @@
   }
   button {
     @apply font-medium text-sm w-full p-4;
-    @apply disabled_text-gray-400 disabled_bg-gray-200 disabled_border-none disabled_cursor-wait;
-    @apply dark_disabled_text-gray-500 dark_disabled_bg-gray-700 disabled_cursor-wait;
     @apply bg-black dark_border dark_border-action/30 dark_bg-gray-700 text-white dark_text-gray-200 transition-colors duration-100;
     @apply hover_text-black hover_bg-action;
     @apply focus_text-black focus_bg-action focus_outline-none;
+    @apply disabled_text-gray-400 disabled_bg-gray-200 disabled_border-transparent disabled_cursor-wait;
+    @apply dark_disabled_text-gray-500 dark_disabled_bg-gray-700;
   }
 </style>

@@ -41,11 +41,15 @@ export interface apiText2ImgRequest {
 }
 
 export interface apiText2ImgResponse {
-  status: string,
+  status: 'success' | 'error' | 'processing',
+  tip?: string,
+  eta?: number,
   message?: string,
-  generationTime: number,
-  id: number,
-  output: string[],
+  messege?: string, // typo in api response for processing message
+  fetch_result?: string,
+  id?: number,
+  generationTime?: number,
+  output?: string[] | string,
   meta?: {
     W: number,
     H: number,

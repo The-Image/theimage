@@ -15,6 +15,7 @@ import type { workRequest, apiText2ImgResponse } from '$lib/types'
 
 export type AspectOption = 'square' | 'landscape' | 'portrait'
 export type SizeOption = 'sm' | 'md' | 'lg' | 'xl'
+export type ImageTypeOption = 'any' | 'photo' | 'artwork' | 'vector'
 export type VariationOption = 1 | 3 | 6 | 9
 export type VaryByAmtOption = 'creativity' | 'effort'
 export const IsVaryByAmt = (word: string): word is VaryByAmtOption => { return word === 'creativity' || word === 'effort' }
@@ -36,9 +37,9 @@ export const imageDimensions = {
     portrait: { width: 176, height: 256 }
   },
   md: {
-    square: { width: 528, height: 528 },
-    landscape: { width: 528, height: 384 },
-    portrait: { width: 384, height: 528 }
+    square: { width: 512, height: 512 },
+    landscape: { width: 512, height: 384 },
+    portrait: { width: 384, height: 512 }
   },
   lg: {
     square: { width: 768, height: 768 },
@@ -61,6 +62,9 @@ export const imageDefaults = {
   size: 'md' as SizeOption,
   width: imageDimensions['md']['square'].width,
   height: imageDimensions['md']['square'].height,
+  imageType: 'any' as ImageTypeOption,
+  seedRandom: true,
+  seedValue: undefined,
   variations: 1 as VariationOption,
   varyBy: 'type' as VaryByKeywordOption | VaryByAmtOption,
   varyRandomly: true,
@@ -83,8 +87,8 @@ export const imageTypes = [
     promptModifier: 'photo, ultra realistic, hyper detail, cinematic lighting, Canon EOS R3, nikon, f/1.4, ISO 200, 1/160s, 8K, RAW, unedited, symmetrical balance, in-frame, 8K',
   },
   {
-    label: 'Illustration',
-    promptModifier: 'illustration of',
+    label: 'Artwork',
+    promptModifier: 'artwork of',
   },
   {
     label: 'Vector Art',
@@ -157,8 +161,7 @@ export const getStepsPercent = (stepsValue: number) => {
 
 export const checkImageGridHeight = (imageGrid: HTMLElement, workRequest: workRequest): boolean => {
   if (imageGrid) {
-    // const viewportHeight = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0)
-    const viewportHeight = window.innerHeight
+    const viewportHeight = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0)
     const imageGridWidth = imageGrid.getBoundingClientRect().width
     const maxImageWidth = workRequest.variations > 2 ? imageGridWidth / 3 : imageGridWidth
     const size = workRequest.size as keyof typeof imageDimensions
@@ -168,9 +171,6 @@ export const checkImageGridHeight = (imageGrid: HTMLElement, workRequest: workRe
     const imageHeight = height > maxImageWidth ? maxImageWidth / imageAspectRatio : height
     const imageRows = Math.ceil(workRequest.variations / 3)
     const imageGridHeight = imageHeight * imageRows
-    console.log('⭐️ imageAspectRatio:', imageAspectRatio)
-    console.log('⭐️ imageGridHeight:', imageGridHeight)
-    console.log('⭐️ viewportHeight:', viewportHeight)
     return imageGridHeight > viewportHeight
   }
   return false
@@ -215,7 +215,6 @@ export const getWorkRequests = (workRequest: workRequest): workRequest[] => {
   return workRequests
 }
 
-// export const apiCall = async (workRequest: workRequest): Promise<apiText2ImgResponse | { status: string, message: string }> => {
 export const apiCall = async (workRequest: workRequest): Promise<apiText2ImgResponse> => {
   // call local API
   const apiResponse = await fetch('/api/make', {
@@ -225,10 +224,9 @@ export const apiCall = async (workRequest: workRequest): Promise<apiText2ImgResp
   });
   const apiData: apiText2ImgResponse = await apiResponse.json();
   // handle errors
-  // if(!apiResponse.ok || apiData.status !== 'success') {
-  //   return { status: 'error', message: apiData.message ?? 'Unable to process request.' }
-  // }
-  // return data
+  if(!apiResponse.ok || apiData.status !== 'success') {
+    return { status: 'error', message: apiData.message ?? 'Unable to process request.' }
+  }
   return apiData
 }
 
@@ -241,7 +239,7 @@ export const fakeApiCall = (workRequest: workRequest): apiText2ImgResponse => {
   for (let i = 0; i < workRequest.variations; i++) testImages.push(`https://picsum.photos/seed/${Math.floor(Math.random() * 999999).toString(16)}/${width}/${height}`)
   // create test response
   const testData = {
-    status: 'success',
+    status: "success" as const,
     generationTime: 2,
     id: Math.floor(Math.random() * 1000000),
     output: testImages,
