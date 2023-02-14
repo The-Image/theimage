@@ -42,7 +42,7 @@
   $: selectedVarianceOptions = varianceOptionGroups[varyBy as keyof typeof varianceOptionGroups]?.map((option) => option.label)
 
   //- Output
-  let testApi = false
+  let testApi = true
   let imageGridTallerThanViewport = false
   let imageGrid: HTMLElement
   let workRequest: workRequest
@@ -79,6 +79,7 @@
     // make requests in parallel & update image grid
     Promise.all(workRequests.map((request) => testApi ? m.fakeApiCall(request) : m.apiCall(request)))
     .then((output) => {
+      console.log('⭐️ output:', output)
       if(output[0].status === 'error') { processingError = true;  processing = false }
       if(output[0].status === 'processing') { processingError = true; console.log(`🐌 Processing - ETA: ${output[0].eta}, URL: ${output[0].fetch_result}`) }
       output.forEach((item) => { if(item.status === 'success') workOutput.push(item as apiText2ImgResponse) })

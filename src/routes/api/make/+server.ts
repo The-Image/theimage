@@ -40,6 +40,7 @@ const submitJson = async (json: apiText2ImgRequest): Promise<apiText2ImgResponse
     headers: { 'content-type': 'application/json' },
   });
   const data: apiText2ImgResponse = await response.json()
+  console.log('⭐️ data:', data)
   return data
 };
 
